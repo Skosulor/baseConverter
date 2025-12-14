@@ -1,0 +1,10 @@
+version: '3.8'
+
+services:
+  base-converter:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3002:80"
+    restart: unless-stopped
