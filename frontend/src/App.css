@@ -98,3 +98,52 @@ input.error:focus {
   margin-top: 4px;
   font-weight: 500;
 }
+
+.info-card {
+  margin-top: 40px;
+  padding: 24px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border-left: 4px solid #4a90e2;
+}
+
+.info-card h3 {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: #333;
+}
+
+.info-card h4 {
+  font-size: 16px;
+  font-weight: 600;
+  margin-top: 20px;
+  margin-bottom: 8px;
+  color: #555;
+}
+
+.info-card p {
+  margin-bottom: 12px;
+  line-height: 1.6;
+  color: #666;
+}
+
+.info-card ul {
+  margin-left: 20px;
+  margin-bottom: 12px;
+  line-height: 1.8;
+  color: #666;
+}
+
+.info-card li {
+  margin-bottom: 6px;
+}
+
+.info-card code {
+  background-color: #e9ecef;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  color: #d63384;
+}
