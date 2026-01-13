@@ -99,6 +99,42 @@ input.error:focus {
   font-weight: 500;
 }
 
+.twos-complement-display {
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 15px;
+  border: 2px solid #ddd;
+  border-radius: 6px;
+  background-color: #f9f9f9;
+  font-family: 'Courier New', monospace;
+  color: #333;
+  word-break: break-all;
+  line-height: 1.6;
+  min-height: 42px; /* Add this line to match input height */
+}
+
+/* Shading for two's complement bits */
+.shade-0 {
+  color: #000000; /* Black - minimum required bits */
+}
+
+.shade-1 {
+  color: #4a4a4a; /* Dark grey */
+}
+
+.shade-2 {
+  color: #8a8a8a; /* Medium grey */
+}
+
+.shade-3 {
+  color: #b8b8b8; /* Light grey */
+}
+
+.shade-4 {
+  color: #d0d0d0; /* Lightest grey - for 64-bit mode */
+}
+
+/* Info Card Styles */
 .info-card {
   margin-top: 40px;
   padding: 24px;

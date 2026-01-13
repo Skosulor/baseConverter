@@ -122,6 +122,93 @@ function App() {
     return num
   }
 
+  // Calculate minimum bits needed to represent a number in two's complement
+  const getMinimumBits = (num) => {
+    if (num === 0) return 1
+    if (num > 0) {
+      // For positive: need enough bits for the value plus sign bit
+      return num.toString(2).length
+    } else {
+      // For negative: find minimum bits where two's complement represents it correctly
+      // Start from 1 bit and increase until we can represent the number
+      for (let bits = 1; bits <= 64; bits++) {
+        const max = Math.pow(2, bits)
+        const maxSigned = Math.pow(2, bits - 1)
+        const minSigned = -maxSigned
+        
+        if (num >= minSigned && num < maxSigned) {
+          // Convert to two's complement
+          const tcValue = num < 0 ? max + num : num
+          const tcBinary = tcValue.toString(2).padStart(bits, '0')
+          
+          // Check if MSB is 1 (negative) and value is correct
+          if (tcBinary[0] === '1') {
+            return bits
+          }
+        }
+      }
+      return 64
+    }
+  }
+
+  // Generate shaded two's complement binary with proper grouping
+  const getShadedTwosComplement = (num) => {
+    if (num === null || isNaN(num)) return null
+    
+    const minBits = getMinimumBits(num)
+    const totalBits = minBits <= 32 ? 32 : 64
+    
+    // Calculate two's complement value
+    const max = Math.pow(2, totalBits)
+    const tcValue = num < 0 ? max + num : num
+    const fullBinary = tcValue.toString(2).padStart(totalBits, '0')
+    
+    // Create segments with shading info
+    const segments = []
+    
+    if (totalBits === 32) {
+      // 32-bit mode: 3 shades + black
+      // bits 31-16 (shade 3 - lightest), 15-8 (shade 2), 7-minBits (shade 1), minBits-1 to 0 (black)
+      
+      if (minBits <= 8) {
+        segments.push({ bits: fullBinary.slice(0, 16), shade: 3 }) // 31-16
+        segments.push({ bits: fullBinary.slice(16, 24), shade: 2 }) // 15-8
+        segments.push({ bits: fullBinary.slice(24, 32 - minBits), shade: 1 }) // 7-minBits
+        segments.push({ bits: fullBinary.slice(32 - minBits), shade: 0 }) // minBits-1 to 0
+      } else if (minBits <= 16) {
+        segments.push({ bits: fullBinary.slice(0, 16), shade: 3 }) // 31-16
+        segments.push({ bits: fullBinary.slice(16, 32 - minBits), shade: 2 }) // 15-minBits
+        segments.push({ bits: fullBinary.slice(32 - minBits), shade: 0 }) // minBits-1 to 0
+      } else if (minBits <= 32) {
+        segments.push({ bits: fullBinary.slice(0, 32 - minBits), shade: 3 }) // 31-minBits
+        segments.push({ bits: fullBinary.slice(32 - minBits), shade: 0 }) // minBits-1 to 0
+      }
+    } else {
+      // 64-bit mode: 4 shades + black
+      if (minBits <= 8) {
+        segments.push({ bits: fullBinary.slice(0, 32), shade: 4 }) // 63-32
+        segments.push({ bits: fullBinary.slice(32, 48), shade: 3 }) // 31-16
+        segments.push({ bits: fullBinary.slice(48, 56), shade: 2 }) // 15-8
+        segments.push({ bits: fullBinary.slice(56, 64 - minBits), shade: 1 }) // 7-minBits
+        segments.push({ bits: fullBinary.slice(64 - minBits), shade: 0 }) // minBits-1 to 0
+      } else if (minBits <= 16) {
+        segments.push({ bits: fullBinary.slice(0, 32), shade: 4 }) // 63-32
+        segments.push({ bits: fullBinary.slice(32, 48), shade: 3 }) // 31-16
+        segments.push({ bits: fullBinary.slice(48, 64 - minBits), shade: 2 }) // 15-minBits
+        segments.push({ bits: fullBinary.slice(64 - minBits), shade: 0 }) // minBits-1 to 0
+      } else if (minBits <= 32) {
+        segments.push({ bits: fullBinary.slice(0, 32), shade: 4 }) // 63-32
+        segments.push({ bits: fullBinary.slice(32, 64 - minBits), shade: 3 }) // 31-minBits
+        segments.push({ bits: fullBinary.slice(64 - minBits), shade: 0 }) // minBits-1 to 0
+      } else {
+        segments.push({ bits: fullBinary.slice(0, 64 - minBits), shade: 4 }) // 63-minBits
+        segments.push({ bits: fullBinary.slice(64 - minBits), shade: 0 }) // minBits-1 to 0
+      }
+    }
+    
+    return { segments, totalBits, minBits }
+  }
+
   // Convert hex string to ASCII if it represents valid bytes
   const hexToAscii = (hexStr) => {
     if (!hexStr || hexStr.length === 0 || hexStr.length % 2 !== 0) {
@@ -510,6 +597,9 @@ function App() {
   const sourceBinary = binaryValue.replace(/\s/g, '').replace(/-/g, '')
   const useSourceBinary = /^[01]+$/.test(sourceBinary) ? sourceBinary : ''
   const derived = !isNaN(num) ? fromDecimal(decimalValue, useSourceBinary) : { signedDecimal: '', bitLength: '' }
+  
+  // Get shaded two's complement for display
+  const shadedTC = !isNaN(num) ? getShadedTwosComplement(num) : null
 
   return (
     <div className="app">
@@ -594,7 +684,7 @@ function App() {
           <h2>Interpretations</h2>
           
           <div className="field">
-            <label>Signed Decimal (Two's Complement)</label>
+            <label>Signed Decimal (Two's Complement, min bits: {derived.bitLength || 0})</label>
             <input
               type="text"
               value={derived.signedDecimal}
@@ -604,15 +694,47 @@ function App() {
             />
           </div>
 
+
           <div className="field">
-            <label>Bit Length</label>
-            <input
-              type="text"
-              value={derived.bitLength}
-              readOnly
-              placeholder="-"
-              className="readonly"
-            />
+            <label>Two's Complement Binary (Minimum bit length: {shadedTC ? shadedTC.minBits : 0})</label>
+            <div className="twos-complement-display">
+              {shadedTC && shadedTC.segments.map((segment, idx) => {
+                // Determine if we need to add space after this segment
+                let displayText = segment.bits
+                const totalBits = shadedTC.totalBits
+                
+                // Calculate bit positions for this segment
+                let bitStart = 0
+                for (let i = 0; i < idx; i++) {
+                  bitStart += shadedTC.segments[i].bits.length
+                }
+                const bitEnd = bitStart + segment.bits.length
+                
+                // Add space after 8, 16, 32 bit boundaries
+                // We're displaying MSB first (left), so positions are reversed
+                const posFromRight = totalBits - bitEnd
+                
+                let addSpace = false
+                if (totalBits === 32) {
+                  // Add space at positions 8, 16 (from right)
+                  if (posFromRight === 8 || posFromRight === 16) {
+                    addSpace = true
+                  }
+                } else if (totalBits === 64) {
+                  // Add space at positions 8, 16, 32 (from right)
+                  if (posFromRight === 8 || posFromRight === 16 || posFromRight === 32) {
+                    addSpace = true
+                  }
+                }
+                
+                return (
+                  <span key={idx}>
+                    <span className={`shade-${segment.shade}`}>{displayText}</span>
+                    {addSpace && ' '}
+                  </span>
+                )
+              })}
+            </div>
           </div>
         </div>
       </div>
@@ -630,6 +752,12 @@ function App() {
           The signed decimal shows the two's complement interpretation only when the most significant bit (MSB) is 1. 
           For example, <code>11100000</code> (8 bits) = 224 unsigned or -32 signed. But <code>00110101</code> has MSB = 0, 
           so it's already positive and no two's complement is shown.
+        </p>
+        
+        <p>
+          The two's complement binary display shows the full 32-bit (or 64-bit if needed) representation with color-coded shading. 
+          The minimum required bits are shown in black, with progressively lighter shades for higher-order bits. 
+          For example, <code>-5</code> needs minimum 4 bits (<code>1011</code>) shown in black, with the remaining bits shaded.
         </p>
         
         <h4>Bit-Preserving Shifts</h4>
